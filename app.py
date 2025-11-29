@@ -60,6 +60,29 @@ if run_btn or target_zip:
 
         st.success(f"**Analysis:** {msg}")
 
+
+        # ADD BAR CHARTS
+        st.divider() # Adds a nice horizontal line
+
+        st.subheader("Job Composition in this Zip Code")
+
+        # Convert the raw dictionary to a Pandas DataFrame for easy charting
+        import pandas as pd # Make sure you add 'import pandas as pd' at the very top of the file!
+
+        # result['raw_data'] looks like {'Management': 1200, 'Sales': 400...}
+        chart_data = pd.DataFrame.from_dict(result['raw_data'], orient='index', columns=['Workers'])
+
+        # Remove the "Total_Workers" row so it doesn't skew the chart
+        if "Total_Workers" in chart_data.index:
+            chart_data = chart_data.drop("Total_Workers")
+
+        # Sort it so the biggest sectors are on top
+        chart_data = chart_data.sort_values(by="Workers", ascending=False)
+
+        # Draw the chart!
+        st.bar_chart(chart_data)
+
+
         # 5. THE MAP
         # We start centered on the Finger Lakes (approx lat/long)
         # In a V2, you can use a geocoder to center exactly on the zip.
