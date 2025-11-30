@@ -211,7 +211,7 @@ if run_btn or target_zip:
         # =========================================
         # VIZ 1: THE QUADRANT OF DOOM (Bubble Chart)
         # =========================================
-        st.subheader("💰 Economic Vulnerability Matrix (Risk vs. Reward)")
+        st.subheader("Economic Vulnerability Matrix (Risk vs. Reward)")
         st.markdown("Are high-paying jobs safer? Often, the opposite is true.")
 
         # 1. Prepare Data (Renaming keys to be 'Safe' for Altair)
@@ -260,7 +260,7 @@ if run_btn or target_zip:
         col_radar_L, col_radar_R = st.columns([2,1])
 
         with col_radar_L:
-            st.subheader("🕸️ Economic Shape (Local vs. National)")
+            st.subheader("Economic Shape (Local vs. National)")
             st.markdown("How this area's job mix compares to the US average baseline.")
 
             # 1. Prepare Data (Calculate Local Percentages)
@@ -332,7 +332,7 @@ if run_btn or target_zip:
         # =========================================
         # VIZ 3: THE EDUCATION PARADOX
         # =========================================
-        st.subheader("🎓 The 'Degree of Defense' Paradox")
+        st.subheader("The 'Degree of Defense' Paradox")
         st.markdown("Does requiring a higher degree protect a sector from AI? Data suggests the opposite.")
 
         # 1. Prepare Data (Group by Education Level)
