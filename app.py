@@ -44,12 +44,6 @@ NATIONAL_BASELINE_PCT = {
 }
 # ---------------------------------------------------------
 
-# --- PAGE CONFIG ---
-st.set_page_config(page_title="The Iceberg Index", layout="wide")
-# ... rest of your app follows ...
-
-
-
 
 # --- HEADER ---
 st.title("The Iceberg Index: Local AI Disruption Map")
