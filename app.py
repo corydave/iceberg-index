@@ -83,6 +83,44 @@ if run_btn or target_zip:
         st.bar_chart(chart_data)
 
 
+        
+# --- THE RISK DISTRIBUTION DONUT CHART ---
+
+st.subheader("Workforce Exposure Breakdown")
+
+# 1. Create 3 Buckets
+high_risk = 0
+med_risk = 0
+low_risk = 0
+
+# You'll need to copy the RISK_SCORES dict from logic.py to here temporarily
+# or just define the thresholds based on the sectors.
+# For simplicity, let's just loop through the raw data and estimate based on the logic we know.
+
+# We need the risk scores to do this accurately. 
+# A quick hack is to import the map from logic
+from logic import RISK_SCORES 
+
+for sector, count in result['raw_data'].items():
+    if sector == "Total_Workers": continue
+    
+    score = RISK_SCORES.get(sector, 0.5)
+    if score >= 0.7:
+        high_risk += count
+    elif score >= 0.4:
+        med_risk += count
+    else:
+        low_risk += count
+
+# 2. Prepare Data for Chart
+risk_data = pd.DataFrame({
+    'Category': ['High Exposure (AI Ready)', 'Medium Exposure (Augmented)', 'Low Exposure (Physical/Human)'],
+    'Workers': [high_risk, med_risk, low_risk]
+})
+
+# 3. Display as a Bar Chart (Streamlit handles this better than donuts natively)
+st.bar_chart(risk_data.set_index('Category'), color=["#FF4B4B", "#FFA500", "#008000"])               
+
  
 
         # 5. THE MAP
