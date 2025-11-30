@@ -8,7 +8,7 @@ import altair as alt
 st.set_page_config(page_title="The Iceberg Index", layout="wide")
 
 # --- HEADER ---
-st.title("🧊 The Iceberg Index: Local AI Disruption Map")
+st.title("The Iceberg Index: Local AI Disruption Map")
 st.markdown("""
 **This tool visualizes 'Hidden' AI exposure.**
 While the news focuses on "Tech" jobs (the tip of the iceberg), the largest volume of disruption 
@@ -59,7 +59,7 @@ if run_btn or target_zip:
         st.divider()
 
         # --- VISUALIZATION 1: JOB COMPOSITION BAR CHART ---
-        st.subheader("📊 Job Composition in this Zip Code")
+        st.subheader("Job Composition in this Zip Code")
         
         # Convert raw data to DataFrame
         chart_data = pd.DataFrame.from_dict(result['raw_data'], orient='index', columns=['Workers'])
@@ -77,7 +77,7 @@ if run_btn or target_zip:
         col_a, col_b = st.columns(2)
 
         with col_a:
-            st.subheader("⚠️ Workforce Exposure")
+            st.subheader("Workforce Exposure")
             
             # Calculate Risk Buckets
             high_risk = 0
@@ -122,7 +122,7 @@ if run_btn or target_zip:
 
         # --- VISUALIZATION 3: SAFE HARBORS ---
         with col_b:
-            st.subheader("🛡️ Local Safe Harbors")
+            st.subheader("Local Safe Harbors")
             st.write("Largest sectors with the *lowest* automation risk:")
 
             # Create a list of (Sector, Count, Risk)
@@ -145,7 +145,7 @@ if run_btn or target_zip:
         st.divider()
 
         # --- VISUALIZATION 4: BIAS ANALYSIS ---
-        st.subheader("🤖 AI Bias Warning")
+        st.subheader("AI Bias Warning")
         
         admin_count = result['raw_data'].get('Office_Admin', 0)
         total = result['total_workers']
