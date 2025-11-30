@@ -7,7 +7,7 @@ load_dotenv()
 API_KEY = os.getenv("CENSUS_API_KEY")
 
 # --- CONFIGURATION ---
-YEAR = "2023"
+YEAR = "2025"
 DATA_SET = "acs/acs5/subject" # American Community Survey 5-Year Data
 
 # --- THE "PROXY" RISK MAP ---
