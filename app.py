@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import logic  # This imports your calculation script
 from logic import RISK_SCORES # We need this to calculate the breakdown
+import altair as alt
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="The Iceberg Index", layout="wide")
@@ -101,7 +102,23 @@ if run_btn or target_zip:
                 'Category': ['High Risk (AI Ready)', 'Medium Risk (Augmented)', 'Low Risk (Safe)'],
                 'Workers': [high_risk, med_risk, low_risk]
             })
-            st.bar_chart(risk_df.set_index('Category'), color=["#FF4B4B", "#FFA500", "#008000"])
+            # st.bar_chart(risk_df.set_index('Category'), color=["#FF4B4B", "#FFA500", "#008000"])
+            
+            # Display Chart using Altair for custom colors
+            risk_df = pd.DataFrame({
+                'Category': ['High Risk (AI Ready)', 'Medium Risk (Augmented)', 'Low Risk (Safe)'],
+                'Workers': [high_risk, med_risk, low_risk],
+                'Color': ["#FF4B4B", "#FFA500", "#008000"] # We explicitly define the color for each row
+            })
+
+            c = alt.Chart(risk_df).mark_bar().encode(
+                x=alt.X('Category', sort=None), # sort=None keeps our High/Med/Low order
+                y='Workers',
+                color=alt.Color('Color', scale=None), # Tell Altair to use the literal hex codes in our data
+                tooltip=['Category', 'Workers']
+            )
+            
+            st.altair_chart(c, use_container_width=True)        
 
         # --- VISUALIZATION 3: SAFE HARBORS ---
         with col_b:
