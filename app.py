@@ -214,46 +214,38 @@ if run_btn or target_zip:
         st.subheader("💰 Economic Vulnerability Matrix (Risk vs. Reward)")
         st.markdown("Are high-paying jobs safer? Often, the opposite is true.")
 
-        # 1. Prepare Data
+        # 1. Prepare Data (Renaming keys to be 'Safe' for Altair)
         bubble_data = []
         for sector, count in result['raw_data'].items():
             if sector == "Total_Workers" or count == 0: continue 
             
             bubble_data.append({
                 'Sector': sector.replace("_", " "),
-                'Local Jobs': count,
-                'AI Risk Score': float(RISK_SCORES.get(sector, 0.5)),
-                'Est. Salary': int(SALARY_ESTIMATES.get(sector, 50000))
+                'Jobs': count,
+                'Risk': float(RISK_SCORES.get(sector, 0.5)),
+                'Salary': int(SALARY_ESTIMATES.get(sector, 50000))
             })
         
         bubble_df = pd.DataFrame(bubble_data)
 
-        # DEBUG: Show the data to ensure lookups are working
-        with st.expander("Show Matrix Data (Debug)"):
-            st.write(bubble_df)
-
         if not bubble_df.empty:
-            # 2. Base Chart (Bubbles)
-            base = alt.Chart(bubble_df).encode(
-                x=alt.X('Est. Salary:Q', axis=alt.Axis(title='Estimated Annual Salary', format='$,d')),
-                y=alt.Y('AI Risk Score:Q', axis=alt.Axis(title='AI Exposure Score (0.0 - 1.0)'), scale=alt.Scale(domain=[0, 1])),
-                tooltip=['Sector', 'Local Jobs', alt.Tooltip('Est. Salary:Q', format='$,d'), 'AI Risk Score:Q']
+            # 2. Context Lines (Vertical at $60k, Horizontal at 0.5)
+            # We define these FIRST so they sit behind the bubbles
+            v_line = alt.Chart(pd.DataFrame({'Salary': [60000]})).mark_rule(strokeDash=[5,5], color='gray').encode(x='Salary:Q')
+            h_line = alt.Chart(pd.DataFrame({'Risk': [0.5]})).mark_rule(strokeDash=[5,5], color='gray').encode(y='Risk:Q')
+
+            # 3. Main Bubble Chart
+            bubbles = alt.Chart(bubble_df).mark_circle().encode(
+                x=alt.X('Salary:Q', axis=alt.Axis(title='Estimated Annual Salary', format='$,d'), scale=alt.Scale(zero=False, padding=20)),
+                y=alt.Y('Risk:Q', axis=alt.Axis(title='AI Exposure Score (0.0 - 1.0)'), scale=alt.Scale(domain=[0, 1])),
+                size=alt.Size('Jobs:Q', scale=alt.Scale(range=[100, 1000]), legend=None), 
+                color=alt.Color('Risk:Q', scale=alt.Scale(scheme='redyellowgreen', domain=[1, 0]), legend=None),
+                tooltip=['Sector', 'Jobs', alt.Tooltip('Salary:Q', format='$,d'), 'Risk:Q']
             )
 
-            bubbles = base.mark_circle().encode(
-                size=alt.Size('Local Jobs:Q', scale=alt.Scale(range=[100, 1000]), legend=None), 
-                color=alt.Color('AI Risk Score:Q', scale=alt.Scale(scheme='redyellowgreen', domain=[1, 0]), legend=None)
-            )
-
-            # 3. Context Lines (Fixed Column Names to match Base)
-            # Vertical Line at $60k
-            v_line = alt.Chart(pd.DataFrame({'Est. Salary': [60000]})).mark_rule(strokeDash=[5,5], color='gray').encode(x='Est. Salary')
-            
-            # Horizontal Line at 0.5 Risk
-            h_line = alt.Chart(pd.DataFrame({'AI Risk Score': [0.5]})).mark_rule(strokeDash=[5,5], color='gray').encode(y='AI Risk Score')
-
-            # 4. Layer them
-            st.altair_chart(bubbles + v_line + h_line, use_container_width=True, theme="streamlit")
+            # 4. Layer and Display
+            # Note: We put bubbles LAST in the sum so they draw on top of the lines
+            st.altair_chart(v_line + h_line + bubbles, use_container_width=True, theme="streamlit")
             st.caption("Bubbles sized by number of local jobs. Top-Right = High Pay / High Risk.")
         
         else:
