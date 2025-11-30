@@ -239,7 +239,7 @@ if run_btn or target_zip:
                 x=alt.X('Salary:Q', axis=alt.Axis(title='Estimated Annual Salary', format='$,d'), scale=alt.Scale(zero=False, padding=20)),
                 y=alt.Y('Risk:Q', axis=alt.Axis(title='AI Exposure Score (0.0 - 1.0)'), scale=alt.Scale(domain=[0, 1])),
                 size=alt.Size('Jobs:Q', scale=alt.Scale(range=[100, 1000]), legend=None), 
-                color=alt.Color('Risk:Q', scale=alt.Scale(scheme='redyellowgreen', domain=[1, 0]), legend=None),
+                color=alt.Color('Risk:Q', scale=alt.Scale(scheme='greenblue', domain=[1, 0]), legend=None),
                 tooltip=['Sector', 'Jobs', alt.Tooltip('Salary:Q', format='$,d'), 'Risk:Q']
             )
 
