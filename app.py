@@ -217,39 +217,44 @@ if run_btn or target_zip:
         # 1. Prepare Data
         bubble_data = []
         for sector, count in result['raw_data'].items():
-            # REMOVED the "< 20" filter so we see data even for small zip codes
             if sector == "Total_Workers" or count == 0: continue 
             
             bubble_data.append({
                 'Sector': sector.replace("_", " "),
                 'Local Jobs': count,
-                # We force these to be numbers (float/int) to prevent weird axis scaling
                 'AI Risk Score': float(RISK_SCORES.get(sector, 0.5)),
                 'Est. Salary': int(SALARY_ESTIMATES.get(sector, 50000))
             })
         
         bubble_df = pd.DataFrame(bubble_data)
 
-        # 2. Check if we actually have data before plotting
+        # DEBUG: Show the data to ensure lookups are working
+        with st.expander("Show Matrix Data (Debug)"):
+            st.write(bubble_df)
+
         if not bubble_df.empty:
-            # 3. Build Altair Chart
-            # We add ":Q" to the field names to strictly tell Altair "These are Quantities (Numbers)"
-            bubble_chart = alt.Chart(bubble_df).mark_circle().encode(
+            # 2. Base Chart (Bubbles)
+            base = alt.Chart(bubble_df).encode(
                 x=alt.X('Est. Salary:Q', axis=alt.Axis(title='Estimated Annual Salary', format='$,d')),
                 y=alt.Y('AI Risk Score:Q', axis=alt.Axis(title='AI Exposure Score (0.0 - 1.0)'), scale=alt.Scale(domain=[0, 1])),
-                size=alt.Size('Local Jobs:Q', scale=alt.Scale(range=[100, 1000]), legend=None), 
-                color=alt.Color('AI Risk Score:Q', scale=alt.Scale(scheme='redyellowgreen', domain=[1, 0]), legend=None),
                 tooltip=['Sector', 'Local Jobs', alt.Tooltip('Est. Salary:Q', format='$,d'), 'AI Risk Score:Q']
-            ).properties(
-                height=400
-            ).interactive()
+            )
 
-            # Add quadrant lines
-            v_line = alt.Chart(pd.DataFrame({'x': [60000]})).mark_rule(strokeDash=[5,5], color='gray').encode(x='x')
-            h_line = alt.Chart(pd.DataFrame({'y': [0.5]})).mark_rule(strokeDash=[5,5], color='gray').encode(y='y')
+            bubbles = base.mark_circle().encode(
+                size=alt.Size('Local Jobs:Q', scale=alt.Scale(range=[100, 1000]), legend=None), 
+                color=alt.Color('AI Risk Score:Q', scale=alt.Scale(scheme='redyellowgreen', domain=[1, 0]), legend=None)
+            )
 
-            st.altair_chart(bubble_chart + v_line + h_line, use_container_width=True)
-            st.caption("Bubbles sized by number of local jobs. Top-Right quadrant = High Pay / High Risk.")
+            # 3. Context Lines (Fixed Column Names to match Base)
+            # Vertical Line at $60k
+            v_line = alt.Chart(pd.DataFrame({'Est. Salary': [60000]})).mark_rule(strokeDash=[5,5], color='gray').encode(x='Est. Salary')
+            
+            # Horizontal Line at 0.5 Risk
+            h_line = alt.Chart(pd.DataFrame({'AI Risk Score': [0.5]})).mark_rule(strokeDash=[5,5], color='gray').encode(y='AI Risk Score')
+
+            # 4. Layer them
+            st.altair_chart(bubbles + v_line + h_line, use_container_width=True, theme="streamlit")
+            st.caption("Bubbles sized by number of local jobs. Top-Right = High Pay / High Risk.")
         
         else:
             st.warning("Not enough data in this Zip Code to generate the Economic Matrix.")
