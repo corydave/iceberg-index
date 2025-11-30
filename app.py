@@ -126,7 +126,7 @@ st.bar_chart(risk_data.set_index('Category'), color=["#FF4B4B", "#FFA500", "#008
         # 5. THE MAP
         # We start centered on the Finger Lakes (approx lat/long)
         # In a V2, you can use a geocoder to center exactly on the zip.
-        m = folium.Map(location=[42.88, -77.28], zoom_start=9)
+        # m = folium.Map(location=[42.88, -77.28], zoom_start=9)
         
         # Add a marker for the zip
         # folium.Marker(
