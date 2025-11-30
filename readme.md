@@ -1,13 +1,19 @@
-# 🧊 The Iceberg Index: Local AI Disruption Map
+# The Iceberg Index: Local AI Disruption Map
 
 **A localized visualization tool for analyzing "Hidden" AI labor market exposure.**
 
-[**View Live App**](https://share.streamlit.io/) ## 📖 About the Project
+<center>
+
+[**View Live App**](https://iceberg-index.streamlit.app/)
+
+</center>
+
+## About the Project
 Popular narratives often frame AI disruption as a "Tech Sector" problem affecting coders and software engineers. The **Iceberg Index** challenges this view. It posits that visible tech disruption is merely the "tip of the iceberg," while the largest volume of exposure lies "submerged" in administrative, logistical, and middle-management roles.
 
 This tool allows educators, policymakers, and community leaders to visualize this exposure at the **Zip Code level**, effectively creating a "Digital Twin" of the local economy to assess AI readiness.
 
-## 📊 Visualizations & Features
+## Visualizations & Features
 
 * **Disruption Index Score:** A composite score (0-100) indicating the aggregate AI exposure of a local workforce.
 * **The "Quadrant of Doom" (Risk vs. Reward):** An economic vulnerability matrix comparing **Estimated Salary** against **AI Risk**. It visually demonstrates that high-paying jobs are often highly exposed.
@@ -15,7 +21,7 @@ This tool allows educators, policymakers, and community leaders to visualize thi
 * **Education Paradox:** Analyzes risk by education level, highlighting how degrees (Bachelor's/Master's) often correlate with *higher* AI exposure than trade certifications.
 * **Bias Warning:** Flags potential gender-skewed displacement risks in administrative-heavy zip codes.
 
-## 🧮 Data Sources & Methodology
+## Data Sources & Methodology
 
 This application bridges three distinct datasets to generate real-time analysis:
 
@@ -23,7 +29,7 @@ This application bridges three distinct datasets to generate real-time analysis:
 2.  **AI Exposure Scores:** Based on the methodology from *Eloundou et al. (2023) "GPTs are GPTs: An Early Look at the Labor Market Impact Potential of Large Language Models."* Occupations are scored based on the technical feasibility of LLMs to reduce the time required for core tasks.
 3.  **O*NET Crosswalk:** Custom logic maps specific O*NET job codes to broad Census occupational categories to allow for geospatial analysis.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Python 3.11**
 * **Streamlit:** Frontend application framework.
@@ -31,13 +37,16 @@ This application bridges three distinct datasets to generate real-time analysis:
 * **Altair & Plotly:** Advanced data visualization (Bubble & Radar charts).
 * **US Census API:** Live data fetching.
 
-## 🚀 Installation & Local Development
+## Installation & Local Development
 
 To run this tool on your own machine:
 
 1.  **Clone the repository**
     ```bash
-    git clone [https://github.com/YOUR_USERNAME/iceberg-index.git](https://github.com/YOUR_USERNAME/iceberg-index.git)
+    git clone https://github.com/corydave/iceberg-index
+    ```
+
+    ```
     cd iceberg-index
     ```
 
@@ -56,7 +65,7 @@ To run this tool on your own machine:
     streamlit run app.py
     ```
 
-## 📄 License
+## License
 
 This project is open-source and available under the MIT License.
 
