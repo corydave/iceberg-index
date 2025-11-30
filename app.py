@@ -1,8 +1,50 @@
 import streamlit as st
 import pandas as pd
-import logic  # This imports your calculation script
-from logic import RISK_SCORES # We need this to calculate the breakdown
 import altair as alt
+import plotly.graph_objects as go # NEW IMPORT FOR RADAR CHART
+import logic
+from logic import RISK_SCORES
+
+# --- REFERENCE DATA LOOKUP TABLES (APPROXIMATE NATIONAL AVERAGES) ---
+
+# Estimated average annual salary for context (Source: BLS/O*NET proxy)
+SALARY_ESTIMATES = {
+    "Management": 110000, "Business_Financial": 85000, "Computer_Math": 105000,
+    "Architecture_Engineering": 95000, "Science_Life_Physical": 80000, "Social_Services": 60000,
+    "Legal": 120000, "Education": 65000, "Arts_Media": 70000,
+    "Healthcare_Practitioners": 100000, "Healthcare_Support": 45000, "Protective_Service": 55000,
+    "Food_Prep": 35000, "Cleaning_Maintenance": 38000, "Personal_Care": 40000,
+    "Sales": 50000, "Office_Admin": 48000, "Farming_Fishing": 40000,
+    "Construction": 55000, "Production": 45000, "Transportation": 50000, "Material_Moving": 38000
+}
+
+# Typical entry-level education required (Source: O*NET proxy)
+EDUCATION_MAPPING = {
+    "Management": "Bachelor's+", "Business_Financial": "Bachelor's", "Computer_Math": "Bachelor's+",
+    "Architecture_Engineering": "Bachelor's+", "Science_Life_Physical": "Bachelor's+", "Social_Services": "Master's",
+    "Legal": "Professional Degree", "Education": "Bachelor's/Master's", "Arts_Media": "Bachelor's",
+    "Healthcare_Practitioners": "Professional Degree", "Healthcare_Support": "Certificate/Associate's", "Protective_Service": "High School/H.S. Diploma+",
+    "Food_Prep": "No Formal Credential", "Cleaning_Maintenance": "No Formal Credential", "Personal_Care": "High School/Certificate",
+    "Sales": "High School/H.S. Diploma+", "Office_Admin": "High School/H.S. Diploma+", "Farming_Fishing": "No Formal Credential",
+    "Construction": "High School/Apprenticeship", "Production": "High School/H.S. Diploma+", "Transportation": "High School/Certificate", "Material_Moving": "No Formal Credential"
+}
+
+# Approximate National Workforce Composition Baseline (for comparison)
+NATIONAL_BASELINE_PCT = {
+    "Management": 11, "Business_Financial": 6, "Computer_Math": 4,
+    "Architecture_Engineering": 2, "Science_Life_Physical": 1, "Social_Services": 2,
+    "Legal": 1, "Education": 6, "Arts_Media": 2,
+    "Healthcare_Practitioners": 6, "Healthcare_Support": 4, "Protective_Service": 2,
+    "Food_Prep": 6, "Cleaning_Maintenance": 3, "Personal_Care": 3,
+    "Sales": 9, "Office_Admin": 12, "Farming_Fishing": 1,
+    "Construction": 5, "Production": 6, "Transportation": 4, "Material_Moving": 5
+}
+# ---------------------------------------------------------
+
+# --- PAGE CONFIG ---
+st.set_page_config(page_title="The Iceberg Index", layout="wide")
+# ... rest of your app follows ...
+
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="The Iceberg Index", layout="wide")
@@ -165,3 +207,169 @@ if run_btn or target_zip:
             Only {admin_percent}% of this workforce is in Office/Admin roles. 
             This area relies more on physical or specialized labor, which currently shows less algorithmic bias regarding displacement.
             """)
+
+
+        # ... NEW VISUALIZATIONS ...
+        
+        st.divider()
+
+        # =========================================
+        # VIZ 1: THE QUADRANT OF DOOM (Bubble Chart)
+        # =========================================
+        st.subheader("💰 Economic Vulnerability Matrix (Risk vs. Reward)")
+        st.markdown("Are high-paying jobs safer? Often, the opposite is true.")
+
+        # 1. Prepare Data
+        bubble_data = []
+        for sector, count in result['raw_data'].items():
+            if sector == "Total_Workers" or count < 20: continue # Skip tiny sectors
+            bubble_data.append({
+                'Sector': sector.replace("_", " "),
+                'Local Jobs': count,
+                'AI Risk Score': RISK_SCORES.get(sector, 0.5),
+                'Est. Salary': SALARY_ESTIMATES.get(sector, 50000)
+            })
+        bubble_df = pd.DataFrame(bubble_data)
+
+        # 2. Build Altair Chart
+        bubble_chart = alt.Chart(bubble_df).mark_circle().encode(
+            x=alt.X('Est. Salary', axis=alt.Axis(title='Estimated Annual Salary', format='$,d')),
+            y=alt.Y('AI Risk Score', axis=alt.Axis(title='AI Exposure Score (0.0 - 1.0)'), scale=alt.Scale(domain=[0, 1])),
+            size=alt.Size('Local Jobs', scale=alt.Scale(range=[100, 1000]), legend=None), # Bubble size ranges
+            color=alt.Color('AI Risk Score', scale=alt.Scale(scheme='redyellowgreen', domain=[1, 0]), legend=None), # Red=High Risk
+            tooltip=['Sector', 'Local Jobs', alt.Tooltip('Est. Salary', format='$,d'), 'AI Risk Score']
+        ).properties(
+            height=400
+        ).interactive()
+
+        # Add quadrant lines for context (Avg salary ~60k, Risk mid-point 0.5)
+        v_line = alt.Chart(pd.DataFrame({'x': [60000]})).mark_rule(strokeDash=[5,5], color='gray').encode(x='x')
+        h_line = alt.Chart(pd.DataFrame({'y': [0.5]})).mark_rule(strokeDash=[5,5], color='gray').encode(y='y')
+
+        st.altair_chart(bubble_chart + v_line + h_line, use_container_width=True)
+        st.caption("Bubbles sized by number of local jobs. Top-Right quadrant = High Pay / High Risk.")
+
+
+        st.divider()
+
+        # =========================================
+        # VIZ 2: THE SPIDER WEB BENCHMARK (Radar Chart)
+        # =========================================
+        col_radar_L, col_radar_R = st.columns([2,1])
+
+        with col_radar_L:
+            st.subheader("🕸️ Economic Shape (Local vs. National)")
+            st.markdown("How this area's job mix compares to the US average baseline.")
+
+            # 1. Prepare Data (Calculate Local Percentages)
+            radar_categories = []
+            local_vals = []
+            national_vals = []
+
+            # Let's pick 8 representative sectors to keep the chart readable
+            key_sectors = ["Management", "Computer_Math", "Healthcare_Practitioners", "Sales", 
+                           "Office_Admin", "Construction", "Production", "Food_Prep"]
+
+            total_local = result['total_workers']
+
+            for sector in key_sectors:
+                radar_categories.append(sector.replace("_", " "))
+                # Calculate local %
+                loc_count = result['raw_data'].get(sector, 0)
+                local_vals.append((loc_count / total_local) * 100)
+                # Get national baseline %
+                national_vals.append(NATIONAL_BASELINE_PCT.get(sector, 0))
+            
+            # Close the loop for radar chart geometry
+            radar_categories.append(radar_categories[0])
+            local_vals.append(local_vals[0])
+            national_vals.append(national_vals[0])
+
+            # 2. Build Plotly Radar Chart
+            fig = go.Figure()
+
+            # Trace 1: National Baseline (Gray background)
+            fig.add_trace(go.Scatterpolar(
+                r=national_vals,
+                theta=radar_categories,
+                fill='toself',
+                name='National Avg',
+                line=dict(color='gray', dash='dot'),
+                fillcolor='rgba(128, 128, 128, 0.2)'
+            ))
+
+            # Trace 2: Local Data (Blue highlight)
+            fig.add_trace(go.Scatterpolar(
+                r=local_vals,
+                theta=radar_categories,
+                fill='toself',
+                name=f'Zip {target_zip}',
+                line=dict(color='#0047AB'), # College Blue color
+                fillcolor='rgba(0, 71, 171, 0.5)'
+            ))
+
+            fig.update_layout(
+                polar=dict(radialaxis=dict(visible=True, range=[0, max(local_vals + national_vals) + 5])),
+                showlegend=True,
+                margin=dict(t=20, b=20, l=40, r=40)
+            )
+            
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+        with col_radar_R:
+             st.info("""
+             **How to read this:**
+             The gray shape is the "typical" US economy. The blue shape is this specific zip code.
+             
+             Spikes indicate where this local economy is heavily concentrated compared to the norm.
+             """)
+
+
+        st.divider()
+        
+        # =========================================
+        # VIZ 3: THE EDUCATION PARADOX
+        # =========================================
+        st.subheader("🎓 The 'Degree of Defense' Paradox")
+        st.markdown("Does requiring a higher degree protect a sector from AI? Data suggests the opposite.")
+
+        # 1. Prepare Data (Group by Education Level)
+        edu_data = {}
+
+        for sector, count in result['raw_data'].items():
+             if sector == "Total_Workers" or count < 10: continue
+             
+             edu_level = EDUCATION_MAPPING.get(sector, "Unspecified")
+             risk_score = RISK_SCORES.get(sector, 0.5)
+             
+             if edu_level not in edu_data:
+                 edu_data[edu_level] = {'total_risk': 0, 'sector_count': 0}
+             
+             # We are averaging the risk scores of the sectors in this edu bucket
+             edu_data[edu_level]['total_risk'] += risk_score
+             edu_data[edu_level]['sector_count'] += 1
+
+        # Format for chart
+        final_edu_list = []
+        for level, data in edu_data.items():
+            if data['sector_count'] > 0:
+                avg_risk = data['total_risk'] / data['sector_count']
+                final_edu_list.append({'Education Level': level, 'Avg AI Risk': avg_risk})
+        
+        edu_df = pd.DataFrame(final_edu_list)
+
+        # Define logical sort order for education
+        edu_sort = ["No Formal Credential", "High School/Certificate", "High School/H.S. Diploma+", 
+                    "High School/Apprenticeship", "Certificate/Associate's", "Bachelor's", 
+                    "Bachelor's/Master's", "Bachelor's+", "Master's", "Professional Degree"]
+
+        # 2. Build Altair Chart
+        edu_chart = alt.Chart(edu_df).mark_bar().encode(
+            x=alt.X('Education Level', sort=edu_sort),
+            y=alt.Y('Avg AI Risk', scale=alt.Scale(domain=[0, 1])),
+            color=alt.Color('Avg AI Risk', scale=alt.Scale(scheme='redyellowgreen', domain=[1, 0]), legend=None),
+            tooltip=['Education Level', alt.Tooltip('Avg AI Risk', format='.2f')]
+        ).properties(height=350)
+
+        st.altair_chart(edu_chart, use_container_width=True)
+        st.caption("Average AI Risk Score of sectors typically requiring this education level.")
